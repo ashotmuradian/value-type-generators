@@ -1,0 +1,42 @@
+<Project>
+  <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
+  <!-- https://github.com/dotnet/msbuild -->
+  <PropertyGroup>
+    <Authors>Ashot Muradian</Authors>
+    <Company>Ashot Muradian</Company>
+    <Description>Expo</Description>
+    <Copyright>Copyright © Ashot Muradian $([System.Datetime]::Now.ToString(yyyy))</Copyright>
+    <PackageId>$(AssemblyName)</PackageId>
+    <RootNamesapce>$(AssemblyName)</RootNamesapce>
+    <Version>0.0.1</Version>
+    <InformationalVersion>$(Version)</InformationalVersion>
+    <InformationalVersion Condition=" '$(GIT_BRANCH)' != '' ">$(InformationalVersion)-$(GIT_BRANCH)</InformationalVersion>
+    <InformationalVersion Condition=" '$(GIT_COMMIT)' != '' ">$(InformationalVersion)-$(GIT_COMMIT)</InformationalVersion>
+    <PackageProjectUrl>https://github.com/ashotmuradian/value-type-generators</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ashotmuradian/value-type-generators</RepositoryUrl>
+    <RepositoryBranch>$(GIT_BRANCH)</RepositoryBranch>
+    <RepositoryCommit>$(GIT_COMMIT)</RepositoryCommit>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageTags>.NET, C#</PackageTags>
+
+    <TargetFramework>net8.0</TargetFramework>
+    <Deterministic>true</Deterministic>
+    <DebugType>portable</DebugType>
+    <LangVersion>preview</LangVersion>
+    <OutputType>library</OutputType>
+
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>All</AnalysisMode>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+  </PropertyGroup>
+</Project>
