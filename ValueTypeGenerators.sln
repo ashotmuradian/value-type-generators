@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".", ".", "{6D060571-ED8C-42
 		.editorconfig = .editorconfig
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
+		compose.yaml = compose.yaml
+		.dockerignore = .dockerignore
 	EndProjectSection
 EndProject
 Global

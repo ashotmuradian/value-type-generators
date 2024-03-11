@@ -100,3 +100,14 @@ class DeliveryDbContext : DbContext {
     }
 }
 ```
+
+#### ASP.NET Core
+```csharp
+app.MapGet("/products/{id}", static ([FromRoute] ProductId id) => {
+    // ...
+});
+
+app.MapGet("/people/{id}", static ([FromRoute] PersonId id) => {
+    // ...
+});
+```

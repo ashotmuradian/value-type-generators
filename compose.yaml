@@ -1,0 +1,29 @@
+version: "3.6"
+
+services:
+
+  db:
+    image: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: value-type-generators
+      POSTGRES_DB: value-type-generators
+      POSTGRES_PASSWORD: Passw12#
+    volumes:
+      - database:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+        
+  app:
+    build:
+      context: ValueTypeGenerators.Sample/
+      dockerfile: Dockerfile
+    volumes:
+      - ~/.nuget:/home/app/.nuget
+    ports:
+      - "8080:8080"
+    depends_on: 
+      - db
+
+volumes:
+  database:

@@ -1,0 +1,11 @@
+### Root
+GET {{url}}/
+
+### Swagger
+GET {{url}}/swagger
+
+### Echo Guid
+GET {{url}}/echo/guid/abcdefab-0123-4567-8989-abc123abc123
+
+### Echo Int
+GET {{url}}/echo/int/1234567890

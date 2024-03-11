@@ -1,3 +1,7 @@
 [*.cs]
 # CA1707: Identifiers should not contain underscores, it's okay for test names
 dotnet_code_quality.CA1707.api_surface = private
+# CA2234: Modify 'Method()' to call 'HttpClient.GetAsync(Uri)' instead of 'HttpClient.GetAsync(string)', it's okay for tests
+dotnet_diagnostic.CA2234.severity = none
+# CA1062: Validate arguments of public methods, it's okay for tests
+dotnet_diagnostic.CA1062.severity = none
