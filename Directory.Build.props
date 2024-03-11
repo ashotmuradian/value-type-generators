@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Authors>Ashot Muradian</Authors>
     <Company>Ashot Muradian</Company>
-    <Description>Expo</Description>
+    <Description>Value Type Generators</Description>
     <Copyright>Copyright © Ashot Muradian $([System.Datetime]::Now.ToString(yyyy))</Copyright>
     <PackageId>$(AssemblyName)</PackageId>
     <RootNamesapce>$(AssemblyName)</RootNamesapce>
