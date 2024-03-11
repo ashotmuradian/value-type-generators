@@ -9,6 +9,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ValueTypeGenerators.Sample"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ValueTypeGenerators.Tests", "ValueTypeGenerators\ValueTypeGenerators.Tests\ValueTypeGenerators.Tests.csproj", "{0112A2B6-8C84-461C-96ED-1C2FC6AF0CA5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".", ".", "{6D060571-ED8C-4286-B6B7-46753F7F75FB}"
+	ProjectSection(SolutionItems) = preProject
+		nuget.config = nuget.config
+		LICENSE = LICENSE
+		global.json = global.json
+		README.md = README.md
+		.gitignore = .gitignore
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
