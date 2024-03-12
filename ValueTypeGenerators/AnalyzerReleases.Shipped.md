@@ -1,4 +1,4 @@
-## Release 0.0.3
+## Release 0.0.4
 
 ### New Rules
 

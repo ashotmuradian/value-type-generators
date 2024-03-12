@@ -140,7 +140,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
 
                 var @namespace = refs.@namespace;
 
-                if (refs.ef)
+                if (refs.ef && names.Length != 0)
                 {
                     context.AddSource("ValueTypeConventionExtensions.g.cs", EfCoreConventionExtensionsSource(names, @namespace));
                 }
