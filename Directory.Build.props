@@ -7,8 +7,9 @@
     <Description>Value Type Generators</Description>
     <Copyright>Copyright © Ashot Muradian $([System.Datetime]::Now.ToString(yyyy))</Copyright>
     <PackageId>$(AssemblyName)</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RootNamesapce>$(AssemblyName)</RootNamesapce>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <InformationalVersion>$(Version)</InformationalVersion>
     <InformationalVersion Condition=" '$(GIT_BRANCH)' != '' ">$(InformationalVersion)-$(GIT_BRANCH)</InformationalVersion>
     <InformationalVersion Condition=" '$(GIT_COMMIT)' != '' ">$(InformationalVersion)-$(GIT_COMMIT)</InformationalVersion>
