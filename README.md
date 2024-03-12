@@ -1,5 +1,11 @@
 # Value Type Generators
 
+### Installation
+
+```shell
+dotnet add package ValueTypeGenerators
+```
+
 ### How to generate
 
 ```csharp
