@@ -29,6 +29,43 @@ public enum CastOperator {
     Explicit = 2
 }
 
+internal sealed class TargetProject {
+    public TargetProject(string @namespace, bool hasEfCoreReference, bool hasJsonReference) {
+        Namespace = @namespace;
+        HasEfCoreReference = hasEfCoreReference;
+        HasJsonReference = hasJsonReference;
+    }
+    
+    public string Namespace { get; }
+    public bool HasEfCoreReference { get; }
+    public bool HasJsonReference { get; }
+}
+
+internal sealed class TargetItem {
+    public string Namespace { get; }
+    public string Name { get; }
+    public TypeOfValue Type { get; }
+    public CastOperator CastOperator { get; }
+    public Location Location { get; }
+    public bool IsCorrectlyDeclared { get; }
+
+    public TargetItem(
+        string @namespace,
+        string name,
+        TypeOfValue type,
+        CastOperator castOperator,
+        Location location,
+        bool isCorrectlyDeclared
+    ) {
+        Namespace = @namespace;
+        Name = name;
+        Type = type;
+        CastOperator = castOperator;
+        Location = location;
+        IsCorrectlyDeclared = isCorrectlyDeclared;
+    }
+}
+
 [Generator]
 public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
     private static readonly Type ValueTypeAttributeType = typeof(ValueTypeAttribute);
@@ -43,22 +80,22 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
     );
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
-        var refs = context.CompilationProvider.Select(static (x, _) => {
-            return (
+        var targetProject = context.CompilationProvider.Select(static (x, _) => {
+            return new TargetProject(
                 @namespace: x.AssemblyName ?? string.Empty,
-                ef: x.ReferencedAssemblyNames.Any(static a => a.Name == "Microsoft.EntityFrameworkCore"),
-                json: x.ReferencedAssemblyNames.Any(static a => a.Name == "System.Text.Json")
+                hasEfCoreReference: x.ReferencedAssemblyNames.Any(static a => a.Name == "Microsoft.EntityFrameworkCore"),
+                hasJsonReference: x.ReferencedAssemblyNames.Any(static a => a.Name == "System.Text.Json")
             );
         });
 
-        var src = context.SyntaxProvider.ForAttributeWithMetadataName(
+        var targetItems = context.SyntaxProvider.ForAttributeWithMetadataName(
             ValueTypeAttributeType.FullName!,
             static (x, _) => x is TypeDeclarationSyntax,
             static (x, _) => {
-                var attr = x.Attributes.First(static xx => xx.AttributeClass?.ToString() == ValueTypeAttributeType.FullName);
-                var type = (TypeOfValue)(attr.NamedArguments.FirstOrDefault(static xx => xx.Key == nameof(ValueTypeAttribute.Type)).Value.Value ?? ValueTypeAttribute.DefaultType);
-                var castOperator = (CastOperator)(attr.NamedArguments.FirstOrDefault(static xx => xx.Key == nameof(ValueTypeAttribute.CastOperator)).Value.Value ?? ValueTypeAttribute.DefaultCastOperator);
-                return (
+                var attr = x.Attributes.First(static a => a.AttributeClass?.ToString() == ValueTypeAttributeType.FullName);
+                var type = (TypeOfValue)(attr.NamedArguments.FirstOrDefault(static a => a.Key == nameof(ValueTypeAttribute.Type)).Value.Value ?? ValueTypeAttribute.DefaultType);
+                var castOperator = (CastOperator)(attr.NamedArguments.FirstOrDefault(static a => a.Key == nameof(ValueTypeAttribute.CastOperator)).Value.Value ?? ValueTypeAttribute.DefaultCastOperator);
+                return new TargetItem(
                     name: x.TargetSymbol.Name,
                     type: type,
                     castOperator: castOperator,
@@ -66,56 +103,54 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                         ? string.Empty
                         : x.TargetSymbol.ContainingNamespace.ToString(),
                     location: x.TargetNode.GetLocation(),
-                    isProperlyDeclared: x.TargetNode is StructDeclarationSyntax s &&
-                                        x.TargetSymbol.ContainingSymbol is INamespaceSymbol &&
-                                        s.Modifiers.Any(SyntaxKind.PartialKeyword) &&
-                                        s.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
+                    isCorrectlyDeclared: x.TargetNode is StructDeclarationSyntax s &&
+                                         x.TargetSymbol.ContainingSymbol is INamespaceSymbol &&
+                                         s.Modifiers.Any(SyntaxKind.PartialKeyword) &&
+                                         s.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
                 );
             }
         );
 
-        context.RegisterSourceOutput(src.Combine(refs), static (context, item) => {
-            var x = item.Left;
-            var refs = item.Right;
-            if (x.isProperlyDeclared) {
-                if (x.type == TypeOfValue.Guid) {
-                    context.AddSource($"{x.name}.g.cs", Source(x.name, x.@namespace, x.castOperator));
-                } else if (x.type == TypeOfValue.Int32) {
-                    context.AddSource($"{x.name}.g.cs", SourceInt32(x.name, x.@namespace, x.castOperator));
+        context.RegisterSourceOutput(targetItems.Combine(targetProject), static (context, item) => {
+            var target = item.Left;
+            var targetProject = item.Right;
+            if (target.IsCorrectlyDeclared) {
+                if (target.Type == TypeOfValue.Guid) {
+                    context.AddSource($"{target.Name}.g.cs", Source(target.Name, target.Namespace, target.CastOperator));
+                } else if (target.Type == TypeOfValue.Int32) {
+                    context.AddSource($"{target.Name}.g.cs", SourceInt32(target.Name, target.Namespace, target.CastOperator));
                 }
 
-                if (refs.json) {
-                    if (x.type == TypeOfValue.Guid) {
-                        context.AddSource($"{x.name}JsonConverter.g.cs", JsonConverterSource(x.name, x.@namespace));
-                    } else if (x.type == TypeOfValue.Int32) {
-                        context.AddSource($"{x.name}JsonConverter.g.cs", JsonConverterSourceInt32(x.name, x.@namespace));
+                if (targetProject.HasJsonReference) {
+                    if (target.Type == TypeOfValue.Guid) {
+                        context.AddSource($"{target.Name}JsonConverter.g.cs", JsonConverterSource(target.Name, target.Namespace));
+                    } else if (target.Type == TypeOfValue.Int32) {
+                        context.AddSource($"{target.Name}JsonConverter.g.cs", JsonConverterSourceInt32(target.Name, target.Namespace));
                     }
                 }
 
-                if (refs.ef) {
-                    if (x.type == TypeOfValue.Guid) {
-                        context.AddSource($"{x.name}ValueConverter.g.cs", ValueConverterSource(x.name, x.@namespace));
-                    } else if (x.type == TypeOfValue.Int32) {
-                        context.AddSource($"{x.name}ValueConverter.g.cs", ValueConverterSourceInt32(x.name, x.@namespace));
+                if (targetProject.HasEfCoreReference) {
+                    if (target.Type == TypeOfValue.Guid) {
+                        context.AddSource($"{target.Name}ValueConverter.g.cs", ValueConverterSource(target.Name, target.Namespace));
+                    } else if (target.Type == TypeOfValue.Int32) {
+                        context.AddSource($"{target.Name}ValueConverter.g.cs", ValueConverterSourceInt32(target.Name, target.Namespace));
                     }
 
-                    context.AddSource($"{x.name}ValueComparer.g.cs", ValueComparerSource(x.name, x.@namespace));
+                    context.AddSource($"{target.Name}ValueComparer.g.cs", ValueComparerSource(target.Name, target.Namespace));
                 }
             } else {
-                context.ReportDiagnostic(Diagnostic.Create(ImproperDeclarationError, x.location, x.name));
+                context.ReportDiagnostic(Diagnostic.Create(ImproperDeclarationError, target.Location, target.Name));
             }
         });
 
-        context.RegisterSourceOutput(src.Collect().Combine(refs), static (context, item) => {
-            var x = item.Left;
-            var refs = item.Right;
-            if (x.All(static xx => xx.isProperlyDeclared)) {
-                var names = x.Select(static xx => $"{xx.@namespace}.{xx.name}").ToArray();
+        context.RegisterSourceOutput(targetItems.Collect().Combine(targetProject), static (context, item) => {
+            var target = item.Left;
+            var targetProject = item.Right;
+            if (target.All(static x => x.IsCorrectlyDeclared)) {
+                var names = target.Select(static x => $"{x.Namespace}.{x.Name}").ToArray();
 
-                var @namespace = refs.@namespace;
-
-                if (refs.ef && names.Length != 0) {
-                    context.AddSource("ValueTypeConventionExtensions.g.cs", EfCoreConventionExtensionsSource(names, @namespace));
+                if (targetProject.HasEfCoreReference && names.Length != 0) {
+                    context.AddSource("ValueTypeConventionExtensions.g.cs", EfCoreConventionExtensionsSource(names, targetProject.Namespace));
                 }
             }
         });
