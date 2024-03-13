@@ -54,10 +54,10 @@ struct ProductId;
 class ProductIdJsonConverter : JsonConverter<ProductId>;
 
 // Entity Framework Core Value Comparer
-class ProductIdValueComparer() : ValueComparer<ProductId>;
+class ProductIdValueComparer : ValueComparer<ProductId>;
 
 // Entity Framework Core Value Converter
-class ProductIdValueConverter() : ValueConverter<ProductId, Guid>;
+class ProductIdValueConverter : ValueConverter<ProductId, Guid>;
 
 // Entity Framework Core Conventions
 static class ValueTypeConventionExtensions {
