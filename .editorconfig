@@ -7,30 +7,35 @@ indent_style = space
 # Xml files
 [*.xml]
 indent_size = 2
+tab_width = 2
 ij_xml_space_inside_empty_tag = true
-insert_final_newline = true;
+insert_final_newline = true
 
 # Xml files
 [*.Build.props]
 indent_size = 2
+tab_width = 2
 ij_xml_space_inside_empty_tag = true
 insert_final_newline = true
 
 # Xml files
 [*.Build.targets]
 indent_size = 2
+tab_width = 2
 ij_xml_space_inside_empty_tag = true
 insert_final_newline = true
 
 # Xml files
 [*.csproj]
 indent_size = 2
+tab_width = 2
 ij_xml_space_inside_empty_tag = true
 insert_final_newline = true
 
 # Xml files
 [*.config]
 indent_size = 2
+tab_width = 2
 ij_xml_space_inside_empty_tag = true
 insert_final_newline = true
 
@@ -137,7 +142,7 @@ csharp_style_conditional_delegate_call = true:suggestion
 
 # Modifier preferences
 csharp_prefer_static_local_function = true:warning
-csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:silent
+csharp_preferred_modifier_order = public, private, protected, internal, static, extern, new, virtual, abstract, sealed, override, readonly, unsafe, volatile, async:silent
 
 # Code-block preferences
 csharp_prefer_braces = true:silent

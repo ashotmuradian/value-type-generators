@@ -7,38 +7,33 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace ValueTypeGenerators;
 
 [AttributeUsage(AttributeTargets.Struct)]
-public sealed class ValueTypeAttribute : Attribute
-{
+public sealed class ValueTypeAttribute : Attribute {
     public const TypeOfValue DefaultType = TypeOfValue.Guid;
     public const CastOperator DefaultCastOperator = CastOperator.Explicit;
-    
+
     public TypeOfValue Type { get; set; } = DefaultType;
     public CastOperator CastOperator { get; set; } = DefaultCastOperator;
 }
 
 [SuppressMessage("Design", "CA1008: Enums should have zero value", Justification = "Except this case")]
 [SuppressMessage("Naming", "CA1720: Identifier contains type name", Justification = "Exactly what is necessary")]
-public enum TypeOfValue
-{
+public enum TypeOfValue {
     Guid = 1,
     Int32 = 2
 }
 
 [SuppressMessage("Design", "CA1008: Enums should have zero value", Justification = "Except this case")]
 [SuppressMessage("Naming", "CA1720: Identifier contains type name", Justification = "Exactly what is necessary")]
-public enum CastOperator
-{
+public enum CastOperator {
     Implicit = 1,
     Explicit = 2
 }
 
 [Generator]
-public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
-{
+public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
     private static readonly Type ValueTypeAttributeType = typeof(ValueTypeAttribute);
 
-    private static readonly DiagnosticDescriptor ImproperDeclarationError = new
-    (
+    private static readonly DiagnosticDescriptor ImproperDeclarationError = new(
         id: "VT0001",
         title: "Value type must be non-nested 'readonly partial struct'",
         messageFormat: "Value type '{0}' must be non-nested 'readonly partial struct'",
@@ -47,24 +42,19 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
         isEnabledByDefault: true
     );
 
-    public void Initialize(IncrementalGeneratorInitializationContext context)
-    {
-        var refs = context.CompilationProvider.Select(static (x, _) =>
-        {
-            return
-            (
+    public void Initialize(IncrementalGeneratorInitializationContext context) {
+        var refs = context.CompilationProvider.Select(static (x, _) => {
+            return (
                 @namespace: x.AssemblyName ?? string.Empty,
                 ef: x.ReferencedAssemblyNames.Any(static a => a.Name == "Microsoft.EntityFrameworkCore"),
                 json: x.ReferencedAssemblyNames.Any(static a => a.Name == "System.Text.Json")
             );
         });
 
-        var src = context.SyntaxProvider.ForAttributeWithMetadataName
-        (
+        var src = context.SyntaxProvider.ForAttributeWithMetadataName(
             ValueTypeAttributeType.FullName!,
             static (x, _) => x is TypeDeclarationSyntax,
-            static (x, _) =>
-            {
+            static (x, _) => {
                 var attr = x.Attributes.First(static xx => xx.AttributeClass?.ToString() == ValueTypeAttributeType.FullName);
                 var type = (TypeOfValue)(attr.NamedArguments.FirstOrDefault(static xx => xx.Key == nameof(ValueTypeAttribute.Type)).Value.Value ?? ValueTypeAttribute.DefaultType);
                 var castOperator = (CastOperator)(attr.NamedArguments.FirstOrDefault(static xx => xx.Key == nameof(ValueTypeAttribute.CastOperator)).Value.Value ?? ValueTypeAttribute.DefaultCastOperator);
@@ -81,74 +71,56 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                                         s.Modifiers.Any(SyntaxKind.PartialKeyword) &&
                                         s.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
                 );
-            });
+            }
+        );
 
-        context.RegisterSourceOutput(src.Combine(refs), static (context, item) =>
-        {
+        context.RegisterSourceOutput(src.Combine(refs), static (context, item) => {
             var x = item.Left;
             var refs = item.Right;
-            if (x.isProperlyDeclared)
-            {
-                if (x.type == TypeOfValue.Guid)
-                {
+            if (x.isProperlyDeclared) {
+                if (x.type == TypeOfValue.Guid) {
                     context.AddSource($"{x.name}.g.cs", Source(x.name, x.@namespace, x.castOperator));
-                }
-                else if (x.type == TypeOfValue.Int32)
-                {
+                } else if (x.type == TypeOfValue.Int32) {
                     context.AddSource($"{x.name}.g.cs", SourceInt32(x.name, x.@namespace, x.castOperator));
                 }
-                
-                if (refs.json)
-                {
-                    if (x.type == TypeOfValue.Guid)
-                    {
+
+                if (refs.json) {
+                    if (x.type == TypeOfValue.Guid) {
                         context.AddSource($"{x.name}JsonConverter.g.cs", JsonConverterSource(x.name, x.@namespace));
-                    }
-                    else if (x.type == TypeOfValue.Int32)
-                    {
+                    } else if (x.type == TypeOfValue.Int32) {
                         context.AddSource($"{x.name}JsonConverter.g.cs", JsonConverterSourceInt32(x.name, x.@namespace));
                     }
                 }
 
-                if (refs.ef)
-                {
-                    if (x.type == TypeOfValue.Guid)
-                    {
+                if (refs.ef) {
+                    if (x.type == TypeOfValue.Guid) {
                         context.AddSource($"{x.name}ValueConverter.g.cs", ValueConverterSource(x.name, x.@namespace));
-                    }
-                    else if (x.type == TypeOfValue.Int32)
-                    {
+                    } else if (x.type == TypeOfValue.Int32) {
                         context.AddSource($"{x.name}ValueConverter.g.cs", ValueConverterSourceInt32(x.name, x.@namespace));
                     }
-                    
+
                     context.AddSource($"{x.name}ValueComparer.g.cs", ValueComparerSource(x.name, x.@namespace));
                 }
-            }
-            else
-            {
+            } else {
                 context.ReportDiagnostic(Diagnostic.Create(ImproperDeclarationError, x.location, x.name));
             }
         });
 
-        context.RegisterSourceOutput(src.Collect().Combine(refs), static (context, item) =>
-        {
+        context.RegisterSourceOutput(src.Collect().Combine(refs), static (context, item) => {
             var x = item.Left;
             var refs = item.Right;
-            if (x.All(static xx => xx.isProperlyDeclared))
-            {
+            if (x.All(static xx => xx.isProperlyDeclared)) {
                 var names = x.Select(static xx => $"{xx.@namespace}.{xx.name}").ToArray();
 
                 var @namespace = refs.@namespace;
 
-                if (refs.ef && names.Length != 0)
-                {
+                if (refs.ef && names.Length != 0) {
                     context.AddSource("ValueTypeConventionExtensions.g.cs", EfCoreConventionExtensionsSource(names, @namespace));
                 }
             }
         });
 
-        static string Source(string name, string @namespace, CastOperator castOperator)
-        {
+        static string Source(string name, string @namespace, CastOperator castOperator) {
             var castOperatorType = castOperator == CastOperator.Implicit ? "implicit" : "explicit";
 
             return
@@ -163,7 +135,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                   #nullable enable
 
                   {{(string.IsNullOrWhiteSpace(@namespace) ? "// global namespace" : $"namespace {@namespace};")}}
-                  
+
                   [JsonConverter(typeof({{name}}JsonConverter))]
                   [Serializable]
                   [StructLayout(LayoutKind.Explicit)]
@@ -396,8 +368,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                   """;
         }
 
-        static string SourceInt32(string name, string @namespace, CastOperator castOperator)
-        {
+        static string SourceInt32(string name, string @namespace, CastOperator castOperator) {
             var castOperatorType = castOperator == CastOperator.Implicit ? "implicit" : "explicit";
 
             return
@@ -412,7 +383,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                   #nullable enable
 
                   {{(string.IsNullOrWhiteSpace(@namespace) ? "// global namespace" : $"namespace {@namespace};")}}
-                  
+
                   [JsonConverter(typeof({{name}}JsonConverter))]
                   [Serializable]
                   [StructLayout(LayoutKind.Explicit)]
@@ -629,8 +600,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                   """;
         }
 
-        static string ValueConverterSource(string name, string @namespace)
-        {
+        static string ValueConverterSource(string name, string @namespace) {
             return
                 $$"""
                   using System;
@@ -651,8 +621,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                   """;
         }
 
-        static string ValueConverterSourceInt32(string name, string @namespace)
-        {
+        static string ValueConverterSourceInt32(string name, string @namespace) {
             return
                 $$"""
                   using System;
@@ -673,8 +642,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                   """;
         }
 
-        static string ValueComparerSource(string name, string @namespace)
-        {
+        static string ValueComparerSource(string name, string @namespace) {
             return
                 $$"""
                   using System;
@@ -696,8 +664,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                   """;
         }
 
-        static string JsonConverterSource(string name, string @namespace)
-        {
+        static string JsonConverterSource(string name, string @namespace) {
             return
                 $$"""
                   using System;
@@ -727,8 +694,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                   """;
         }
 
-        static string JsonConverterSourceInt32(string name, string @namespace)
-        {
+        static string JsonConverterSourceInt32(string name, string @namespace) {
             return
                 $$"""
                   using System;
@@ -758,8 +724,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator
                   """;
         }
 
-        static string EfCoreConventionExtensionsSource(string[] names, string @namespace)
-        {
+        static string EfCoreConventionExtensionsSource(string[] names, string @namespace) {
             return
                 $$"""
                   using System;
