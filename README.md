@@ -48,7 +48,18 @@ Below is the simplified version of what's generated.
 
 ```csharp
 // Value Type
-struct ProductId;
+// There is no Value property, instead casting operators should be used
+[StructLayout(LayoutKind.Explicit)]
+struct ProductId {
+    [FieldOffset(0)]
+    private readonly Guid _value;
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static explicit operator ProductId(Guid g) => Unsafe.As<Guid, ProductId>(ref g);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static explicit operator Guid(ProductId id) => id._value;
+}
 
 // System.Text.Json Converter
 class ProductIdJsonConverter : JsonConverter<ProductId>;
