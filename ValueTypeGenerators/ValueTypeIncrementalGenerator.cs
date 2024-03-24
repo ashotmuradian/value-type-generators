@@ -183,7 +183,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                         ISpanFormattable,
                         IUtf8SpanFormattable
                   {
-                      public static readonly {{name}} _empty = default;
+                      private static readonly {{name}} _empty = default;
                       public static ref readonly {{name}} Empty => ref _empty;
                   
                       [FieldOffset(0)]
@@ -432,7 +432,7 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                         ISpanFormattable,
                         IUtf8SpanFormattable
                   {
-                      public static readonly {{name}} _empty = default;
+                      private static readonly {{name}} _empty = default;
                       public static ref readonly {{name}} Empty => ref _empty;
                   
                       [FieldOffset(0)]
