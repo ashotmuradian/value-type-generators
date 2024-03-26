@@ -54,7 +54,7 @@ Below is the simplified version of what's generated.
 
 ```csharp
 // Value Type
-// There is no Value property, instead casting operators should be used
+// There is no Value property; instead, casting operators should be used
 [StructLayout(LayoutKind.Explicit)]
 struct ProductId {
     [FieldOffset(0)]
