@@ -3,6 +3,7 @@ root = true
 # All files
 [*]
 indent_style = space
+spelling_exclusion_path = spelling.dic
 
 # Xml files
 [*.xml]
