@@ -7,5 +7,8 @@ GET {{url}}/swagger
 ### Echo Guid
 GET {{url}}/echo/guid/abcdefab-0123-4567-8989-abc123abc123
 
-### Echo Int
+### Echo Int32
 GET {{url}}/echo/int/1234567890
+
+### Echo Int64
+GET {{url}}/echo/long/1234567890123456789

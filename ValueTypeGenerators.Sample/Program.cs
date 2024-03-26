@@ -26,7 +26,11 @@ public sealed class Program {
             .WithOpenApi();
 
         app.MapGet("/echo/int/{value}", static ([FromRoute] PersonId value) => value)
-            .WithName("EchoInt")
+            .WithName("EchoInt32")
+            .WithOpenApi();
+
+        app.MapGet("/echo/long/{value}", static ([FromRoute] TimestampId value) => value)
+            .WithName("EchoInt64")
             .WithOpenApi();
 
         await app.RunAsync();

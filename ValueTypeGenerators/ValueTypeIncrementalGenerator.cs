@@ -19,7 +19,21 @@ public sealed class ValueTypeAttribute : Attribute {
 [SuppressMessage("Naming", "CA1720: Identifier contains type name", Justification = "Exactly what is necessary")]
 public enum TypeOfValue {
     Guid = 1,
-    Int32 = 2
+    Int32 = 2,
+    Int64 = 3
+}
+
+[SuppressMessage("Design", "CA1008: Enums should have zero value", Justification = "Except this case")]
+[SuppressMessage("Naming", "CA1720: Identifier contains type name", Justification = "Exactly what is necessary")]
+internal enum IntegerType : ulong {
+    // Int16 = (ulong)short.MaxValue,
+    Int32 = int.MaxValue,
+    Int64 = long.MaxValue,
+    // Int128 = (System.Int128).MaxValue,
+    // UInt16 = ushort.MaxValue,
+    // UInt32 = uint.MaxValue,
+    // UInt64 = ulong.MaxValue,
+    // UInt128 = (System.UInt128).MaxValue,
 }
 
 [SuppressMessage("Design", "CA1008: Enums should have zero value", Justification = "Except this case")]
@@ -117,29 +131,37 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
             if (target.IsCorrectlyDeclared) {
                 if (target.Type == TypeOfValue.Guid) {
                     context.AddSource($"{target.Name}.g.cs", Source(target.Name, target.Namespace, target.CastOperator));
-                } else if (target.Type == TypeOfValue.Int32) {
-                    context.AddSource($"{target.Name}.g.cs", SourceInt32(target.Name, target.Namespace, target.CastOperator));
+                } else {
+                    context.AddSource($"{target.Name}.g.cs", SourceInteger(target.Name, target.Namespace, target.CastOperator, ToIntegerType(target.Type)));
                 }
 
                 if (targetProject.HasJsonReference) {
                     if (target.Type == TypeOfValue.Guid) {
                         context.AddSource($"{target.Name}JsonConverter.g.cs", JsonConverterSource(target.Name, target.Namespace));
-                    } else if (target.Type == TypeOfValue.Int32) {
-                        context.AddSource($"{target.Name}JsonConverter.g.cs", JsonConverterSourceInt32(target.Name, target.Namespace));
+                    } else {
+                        context.AddSource($"{target.Name}JsonConverter.g.cs", JsonConverterSourceInteger(target.Name, target.Namespace, ToIntegerType(target.Type)));
                     }
                 }
 
                 if (targetProject.HasEfCoreReference) {
                     if (target.Type == TypeOfValue.Guid) {
                         context.AddSource($"{target.Name}ValueConverter.g.cs", ValueConverterSource(target.Name, target.Namespace));
-                    } else if (target.Type == TypeOfValue.Int32) {
-                        context.AddSource($"{target.Name}ValueConverter.g.cs", ValueConverterSourceInt32(target.Name, target.Namespace));
+                    } else {
+                        context.AddSource($"{target.Name}ValueConverter.g.cs", ValueConverterSourceInteger(target.Name, target.Namespace, ToIntegerType(target.Type)));
                     }
 
                     context.AddSource($"{target.Name}ValueComparer.g.cs", ValueComparerSource(target.Name, target.Namespace));
                 }
             } else {
                 context.ReportDiagnostic(Diagnostic.Create(ImproperDeclarationError, target.Location, target.Name));
+            }
+
+            static IntegerType ToIntegerType(TypeOfValue type) {
+                return type switch {
+                    TypeOfValue.Int32 => IntegerType.Int32,
+                    TypeOfValue.Int64 => IntegerType.Int64,
+                    _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+                };
             }
         });
 
@@ -403,8 +425,10 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                   """;
         }
 
-        static string SourceInt32(string name, string @namespace, CastOperator castOperator) {
+        static string SourceInteger(string name, string @namespace, CastOperator castOperator, IntegerType integerType) {
             var castOperatorType = castOperator == CastOperator.Implicit ? "implicit" : "explicit";
+
+            var type = integerType.ToString("G");
 
             return
                 $$"""
@@ -436,19 +460,19 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                       public static ref readonly {{name}} Empty => ref _empty;
                   
                       [FieldOffset(0)]
-                      private readonly Int32 _value;
+                      private readonly {{type}} _value;
                   
-                      /// <inheritdoc cref="Int32.ToString()" />
+                      /// <inheritdoc cref="{{type}}.ToString()" />
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public override string ToString()
                           => _value.ToString();
                   
-                      /// <inheritdoc cref="Int32.GetHashCode()" />
+                      /// <inheritdoc cref="{{type}}.GetHashCode()" />
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public override int GetHashCode()
                           => _value.GetHashCode();
                   
-                      /// <inheritdoc cref="Int32.Equals(object?)" />
+                      /// <inheritdoc cref="{{type}}.Equals(object?)" />
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public override bool Equals([NotNullWhen(true)] object? obj)
                           => _value.Equals(obj);
@@ -472,24 +496,24 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public static {{name}} Parse(ReadOnlySpan<char> s)
                       {
-                          var i = Int32.Parse(s, null);
-                          return Unsafe.As<Int32, {{name}}>(ref i);
+                          var i = {{type}}.Parse(s, null);
+                          return Unsafe.As<{{type}}, {{name}}>(ref i);
                       }
                   
                       /// <inheritdoc cref="ISpanParsable{TSelf}.Parse(ReadOnlySpan{char}, IFormatProvider?)" />
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public static {{name}} Parse(ReadOnlySpan<char> s, IFormatProvider? provider)
                       {
-                          var i = Int32.Parse(s, provider);
-                          return Unsafe.As<Int32, {{name}}>(ref i);
+                          var i = {{type}}.Parse(s, provider);
+                          return Unsafe.As<{{type}}, {{name}}>(ref i);
                       }
                   
                       /// <inheritdoc cref="ISpanParsable{TSelf}.TryParse(ReadOnlySpan{char}, IFormatProvider?, out TSelf)" />
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public static bool TryParse(ReadOnlySpan<char> s, out {{name}} result)
                       {
-                          var r = Int32.TryParse(s, null, out var i);
-                          result = Unsafe.As<Int32, {{name}}>(ref i);
+                          var r = {{type}}.TryParse(s, null, out var i);
+                          result = Unsafe.As<{{type}}, {{name}}>(ref i);
                           return r;
                       }
                   
@@ -497,38 +521,38 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider? provider, out {{name}} result)
                       {
-                          var r = Int32.TryParse(s, provider, out var i);
-                          result = Unsafe.As<Int32, {{name}}>(ref i);
+                          var r = {{type}}.TryParse(s, provider, out var i);
+                          result = Unsafe.As<{{type}}, {{name}}>(ref i);
                           return r;
                       }
                       
                       /// <inheritdoc cref="IUtf8SpanParsable{TSelf}.Parse(ReadOnlySpan{byte}, IFormatProvider?)" />
                       public static {{name}} Parse(ReadOnlySpan<byte> utf8Text)
                       {
-                          var i = Int32.Parse(utf8Text, null);
-                          return Unsafe.As<Int32, {{name}}>(ref i);
+                          var i = {{type}}.Parse(utf8Text, null);
+                          return Unsafe.As<{{type}}, {{name}}>(ref i);
                       }
                       
                       /// <inheritdoc cref="IUtf8SpanParsable{TSelf}.Parse(ReadOnlySpan{byte}, IFormatProvider?)" />
                       public static {{name}} Parse(ReadOnlySpan<byte> utf8Text, IFormatProvider? provider)
                       {
-                          var i = Int32.Parse(utf8Text, provider);
-                          return Unsafe.As<Int32, {{name}}>(ref i);
+                          var i = {{type}}.Parse(utf8Text, provider);
+                          return Unsafe.As<{{type}}, {{name}}>(ref i);
                       }
                   
                       /// <inheritdoc cref="IUtf8SpanParsable{TSelf}.TryParse(ReadOnlySpan{byte}, IFormatProvider?, out TSelf)" />
                       public static bool TryParse(ReadOnlySpan<byte> utf8Text, out {{name}} result)
                       {
-                          var r = Int32.TryParse(utf8Text, null, out var i);
-                          result = Unsafe.As<Int32, {{name}}>(ref i);
+                          var r = {{type}}.TryParse(utf8Text, null, out var i);
+                          result = Unsafe.As<{{type}}, {{name}}>(ref i);
                           return r;
                       }
                   
                       /// <inheritdoc cref="IUtf8SpanParsable{TSelf}.TryParse(ReadOnlySpan{byte}, IFormatProvider?, out TSelf)" />
                       public static bool TryParse(ReadOnlySpan<byte> utf8Text, IFormatProvider? provider, out {{name}} result)
                       {
-                          var r = Int32.TryParse(utf8Text, provider, out var i);
-                          result = Unsafe.As<Int32, {{name}}>(ref i);
+                          var r = {{type}}.TryParse(utf8Text, provider, out var i);
+                          result = Unsafe.As<{{type}}, {{name}}>(ref i);
                           return r;
                       }
                   
@@ -536,24 +560,24 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public static {{name}} Parse(string s)
                       {
-                          var i = Int32.Parse(s, null);
-                          return Unsafe.As<Int32, {{name}}>(ref i);
+                          var i = {{type}}.Parse(s, null);
+                          return Unsafe.As<{{type}}, {{name}}>(ref i);
                       }
                   
                       /// <inheritdoc cref="IParsable{TSelf}.Parse(string, IFormatProvider?)" />
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public static {{name}} Parse(string s, IFormatProvider? provider)
                       {
-                          var i = Int32.Parse(s, provider);
-                          return Unsafe.As<Int32, {{name}}>(ref i);
+                          var i = {{type}}.Parse(s, provider);
+                          return Unsafe.As<{{type}}, {{name}}>(ref i);
                       }
                   
                       /// <inheritdoc cref="IParsable{TSelf}.TryParse(string?, IFormatProvider?, out TSelf)" />
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public static bool TryParse([NotNullWhen(true)] string? s, out {{name}} result)
                       {
-                          var r = Int32.TryParse(s, null, out var i);
-                          result = Unsafe.As<Int32, {{name}}>(ref i);
+                          var r = {{type}}.TryParse(s, null, out var i);
+                          result = Unsafe.As<{{type}}, {{name}}>(ref i);
                           return r;
                       }
                   
@@ -561,8 +585,8 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
                       public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, out {{name}} result)
                       {
-                          var r = Int32.TryParse(s, provider, out var i);
-                          result = Unsafe.As<Int32, {{name}}>(ref i);
+                          var r = {{type}}.TryParse(s, provider, out var i);
+                          result = Unsafe.As<{{type}}, {{name}}>(ref i);
                           return r;
                       }
                   
@@ -597,10 +621,10 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                           => _value.TryFormat(utf8Destination, out bytesWritten, format, provider);
                       
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                      public static {{castOperatorType}} operator {{name}}(Int32 i) => Unsafe.As<Int32, {{name}}>(ref i);
+                      public static {{castOperatorType}} operator {{name}}({{type}} i) => Unsafe.As<{{type}}, {{name}}>(ref i);
                   
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                      public static {{castOperatorType}} operator Int32({{name}} i) => i._value;
+                      public static {{castOperatorType}} operator {{type}}({{name}} i) => i._value;
                   
                       /// <inheritdoc cref="IEqualityOperators{TSelf,TOther,TResult}.op_Equality(TSelf, TOther)" />
                       [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -656,7 +680,9 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                   """;
         }
 
-        static string ValueConverterSourceInt32(string name, string @namespace) {
+        static string ValueConverterSourceInteger(string name, string @namespace, IntegerType integerType) {
+            var type = integerType.ToString("G");
+            
             return
                 $$"""
                   using System;
@@ -666,9 +692,9 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
 
                   {{(string.IsNullOrWhiteSpace(@namespace) ? "// global namespace" : $"namespace {@namespace};")}}
 
-                  public sealed class {{name}}ValueConverter() : ValueConverter<{{name}}, Int32>
+                  public sealed class {{name}}ValueConverter() : ValueConverter<{{name}}, {{type}}>
                   (
-                      static id => (Int32)id,
+                      static id => ({{type}})id,
                       static id => ({{name}})id
                   )
                   {
@@ -729,7 +755,9 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                   """;
         }
 
-        static string JsonConverterSourceInt32(string name, string @namespace) {
+        static string JsonConverterSourceInteger(string name, string @namespace, IntegerType integerType) {
+            var type = integerType.ToString("G");
+            
             return
                 $$"""
                   using System;
@@ -747,13 +775,13 @@ public sealed class ValueTypeIncrementalGenerator : IIncrementalGenerator {
                       
                       public override {{name}} Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
                       {
-                          var i = reader.GetInt32();
-                          return Unsafe.As<Int32, {{name}}>(ref i);
+                          var i = reader.Get{{type}}();
+                          return Unsafe.As<{{type}}, {{name}}>(ref i);
                       }
                       
                       public override void Write(Utf8JsonWriter writer, {{name}} value, JsonSerializerOptions options)
                       {
-                          writer.WriteNumberValue(Unsafe.As<{{name}}, Int32>(ref value));
+                          writer.WriteNumberValue(Unsafe.As<{{name}}, {{type}}>(ref value));
                       }
                   }
                   """;

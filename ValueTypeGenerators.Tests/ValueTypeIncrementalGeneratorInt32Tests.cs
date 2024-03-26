@@ -6,31 +6,31 @@ using Xunit;
 namespace ValueTypeGenerators.Tests;
 
 [ValueType(Type = TypeOfValue.Int32)]
-public readonly partial struct IntegerId;
+public readonly partial struct Int32Id;
 
 public sealed class ValueTypeIncrementalGeneratorInt32Tests {
     private static readonly JsonSerializerOptions SerializerOptions = new() {
-        Converters = { IntegerIdJsonConverter.Default }
+        Converters = { Int32IdJsonConverter.Default }
     };
 
     [Fact]
     public void Empty() {
-        Assert.Equal(0, (Int32)IntegerId.Empty);
+        Assert.Equal(0, (Int32)Int32Id.Empty);
     }
 
     [Fact]
     public void NewId() {
-        var id1 = (IntegerId)123;
-        Assert.NotEqual(IntegerId.Empty, id1);
+        var id1 = (Int32Id)123;
+        Assert.NotEqual(Int32Id.Empty, id1);
 
-        var id2 = (IntegerId)456;
+        var id2 = (Int32Id)456;
         Assert.NotEqual(id1, id2);
     }
 
     [Fact]
     public void From_Int32() {
         var a = 123;
-        var b = (IntegerId)a;
+        var b = (Int32Id)a;
         var c = (Int32)b;
         Assert.Equal(a, c);
         Assert.Equal(a.ToString(CultureInfo.InvariantCulture), b.ToString());
@@ -38,9 +38,9 @@ public sealed class ValueTypeIncrementalGeneratorInt32Tests {
 
     [Fact]
     public void To_Int32() {
-        var a = (IntegerId)123;
+        var a = (Int32Id)123;
         var b = (Int32)a;
-        var c = (IntegerId)b;
+        var c = (Int32Id)b;
         Assert.Equal(a, c);
         Assert.Equal(a.ToString(), b.ToString(CultureInfo.InvariantCulture));
     }
@@ -49,13 +49,13 @@ public sealed class ValueTypeIncrementalGeneratorInt32Tests {
     public void From_Json() {
         var id = 123;
         var expected = JsonSerializer.Deserialize<Int32>($"{id}");
-        var actual = JsonSerializer.Deserialize<IntegerId>($"{id}", SerializerOptions);
+        var actual = JsonSerializer.Deserialize<Int32Id>($"{id}", SerializerOptions);
         Assert.Equal(expected, (Int32)actual);
     }
 
     [Fact]
     public void To_Json() {
-        var id = (IntegerId)123;
+        var id = (Int32Id)123;
         var expected = JsonSerializer.Serialize((Int32)id);
         var actual = JsonSerializer.Serialize(id, SerializerOptions);
         Assert.Equal(expected, actual);
