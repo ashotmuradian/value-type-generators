@@ -9,7 +9,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RootNamesapce>$(AssemblyName)</RootNamesapce>
-    <Version>0.0.6</Version>
+    <Version>0.0.7</Version>
     <InformationalVersion>$(Version)</InformationalVersion>
     <InformationalVersion Condition=" '$(GIT_BRANCH)' != '' ">$(InformationalVersion)-$(GIT_BRANCH)</InformationalVersion>
     <InformationalVersion Condition=" '$(GIT_COMMIT)' != '' ">$(InformationalVersion)-$(GIT_COMMIT)</InformationalVersion>

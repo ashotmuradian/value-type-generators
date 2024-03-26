@@ -133,4 +133,8 @@ app.MapGet("/products/{id}", static ([FromRoute] ProductId id) => {
 app.MapGet("/people/{id}", static ([FromRoute] PersonId id) => {
     // ...
 });
+
+app.MapGet("/time/{id}", static ([FromRoute] TimestampId id) => {
+    // ...
+});
 ```
