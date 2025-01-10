@@ -84,6 +84,8 @@ static class ValueTypeConventionExtensions {
 
 ### Usage
 
+#### As `Guid`
+
 ```csharp
 [ValueType]
 readonly partial struct ProductId;
@@ -96,12 +98,36 @@ record Product {
 Casting is the only way to get the value.
 
 ```csharp
-var newProductId = ProductId.NewProductId(); // equivalent to casting Guid.NewGuid() to ProductId
-var newProductIdAsGuid = (Guid)newProductId;
-var anotherProductId = (ProductId)Guid.NewGuid();
+var productId = (ProductId)Guid.NewGuid(); // equivalent to the generated method ProductId.NewProductId()
+var productIdAsGuid = (Guid)productId;
+```
 
-var personId = (PersonId)123;
-var personIdAsInt = (int)personId;
+#### As `int`
+
+```csharp
+[ValueType(Type = TypeOfValue.Int32)]
+readonly partial struct ProductId;
+```
+
+Again, casting is the only way to get the value.
+
+```csharp
+var productId = (ProductId)123;
+var productIdAsInt = (int)productId;
+```
+
+#### Implicit cast operators
+
+```csharp
+[ValueType(CastOperator = CastOperator.Implicit)]
+readonly partial struct ProductId;
+```
+
+Once again, casting is the only way to get the value, but this time it's implicit.
+
+```csharp
+ProductId productId = Guid.NewGuid(); // equivalent to ProductId.NewProductId()
+Guid productIdAsGuid = productId;
 ```
 
 #### Entity Framework Core
